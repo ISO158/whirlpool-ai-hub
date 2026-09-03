@@ -80,28 +80,33 @@ flowchart TD
 
 ## 📂 Estrutura do Repositório
 
+## 🌐 Interface Web: Whirlpool AI Operations Portal
+
+O projeto inclui uma aplicação web corporativa completa em **HTML5, CSS3 e JavaScript**, integrada ao backend **FastAPI**:
+
+- **Gravação Direta pelo Navegador:** O colaborador grava o relato diretamente pelo microfone com um clique (usando a API nativa `MediaRecorder`).
+- **Upload / Drag & Drop:** Suporte a arquivos `.m4a`, `.mp3`, `.wav`, `.mp4`.
+- **Renderização Visual de Diagramas:** Fluxogramas operacionais desenhados em tempo real na tela com **Mermaid.js**.
+- **Compartilhamento 1-Clique:**
+  - 🟢 **WhatsApp:** Gera link direto com o resumo e plano de ação pré-formatado para encaminhar a stakeholders.
+  - ✉️ **E-mail:** Cria rascunho de e-mail com a ata executiva e status da governança.
+  - 📋 **Copiar Relatório / Baixar Markdown.**
+- **Chat RAG Integrado:** Barra interativa de perguntas e respostas conectada ao BigQuery Vector Search.
+
 ```
 whirlpool-ai-hub/
-├── data/
-│   ├── sample_meetings.py     # Dados sintéticos de cenários reais Whirlpool
-│   ├── raw_audio/             # Diretório para áudios/vídeos das reuniões
-│   └── sanitized/             # Transcrições pós-governança
+├── frontend/                  # Aplicação Web (HTML5/CSS3/JS/Mermaid.js)
+│   ├── index.html             # Interface do Portal do Colaborador
+│   ├── css/style.css          # Estilização no Design System Whirlpool
+│   └── js/app.js              # Gravação de microfone, render Mermaid e API fetch
 ├── src/
-│   ├── agents/
-│   │   ├── multimodal_agent.py# Ingestão e segmentação multimodal (Gemini)
-│   │   ├── governance_agent.py# Sanitização e auditoria de PII (PULSE/PIA)
-│   │   ├── diagram_agent.py   # Geração de fluxogramas Mermaid e Matriz RACI
-│   │   └── rag_agent.py       # Assistente de busca vetorial no BigQuery
-│   ├── pipeline/
-│   │   ├── embeddings.py      # Geração de vetores com text-embedding-004
-│   │   └── bigquery_loader.py # Schema, VECTOR INDEX e consultas SQL
-│   └── utils/
-│       └── gcp_client.py      # Gerenciamento seguro de conexões GCP
-├── reports/                   # Relatórios executivos e diagramas gerados
-├── notebooks/
-│   └── demo_walkthrough.ipynb # Demonstração interativa passo a passo
-├── main.py                    # Script de orquestração ponta a ponta
-├── requirements.txt           # Dependências do projeto
+│   ├── api/
+│   │   └── server.py          # Backend REST em FastAPI com CORS e Swagger docs
+│   ├── agents/                # Agentes Multimodal, Governança, Diagramas e RAG
+│   ├── pipeline/              # Ingestão BigQuery e Embeddings
+│   └── utils/                 # Conexão GCP
+├── run_app.py                 # Inicializador 1-clique do servidor web
+├── main.py                    # Script de execução em lote / CLI
 └── README.md
 ```
 
@@ -109,73 +114,24 @@ whirlpool-ai-hub/
 
 ## 🚀 Como Executar o Projeto
 
-### 1. Pré-requisitos
-- Python 3.10+ instalado.
-- Conta no Google Cloud com projeto ativo e APIs ativadas (`Vertex AI`, `BigQuery`).
-- Google Cloud CLI autenticado com Application Default Credentials:
-  ```bash
-  gcloud auth application-default login
-  gcloud auth application-default set-quota-project SEU_PROJECT_ID
-  ```
-
-### 2. Configuração do Ambiente Virtual
+### 1. Iniciar o Portal Web (Interface Completa)
 ```bash
-# Clone ou acesse o repositório
-cd whirlpool-ai-hub
-
-# Crie e ative o ambiente virtual
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1    # No Windows PowerShell
-source .venv/bin/activate       # No Linux/Mac
-
-# Instale as dependências
-pip install -r requirements.txt
+python run_app.py
 ```
+O navegador abrirá automaticamente em `http://127.0.0.1:8000`.  
+A documentação interativa da API estará disponível em `http://127.0.0.1:8000/docs`.
 
-### 3. Variáveis de Ambiente
-Crie um arquivo `.env` na raiz do projeto:
-```env
-GCP_PROJECT_ID=seu-project-id
-GCP_LOCATION=us-central1
-BIGQUERY_DATASET=whirlpool_intelligence
-BIGQUERY_TABLE=meeting_knowledge_base
-EMBEDDING_MODEL=text-embedding-004
-GEMINI_MODEL=gemini-2.5-flash
-```
-
-### 4. Execução Ponta a Ponta
-Para executar todo o pipeline (Governança $\to$ Ingestão $\to$ BigQuery Vector Search $\to$ Diagramas $\to$ Consultas RAG):
+### 2. Execução em Lote via Terminal (CLI)
 ```bash
 python main.py
 ```
 
----
-
-## 📊 Demonstração dos Resultados
-
-### 1. Auditoria de Governança de Dados (Compliance Whirlpool PULSE)
-```text
-Métricas de Mascaramento:
-- CPFs removidos: 1
-- Matrículas funcionais protegidas: 1
-- Telefones mascarados: 1
-Status: APPROVED_PULSE_PIA
-```
-
-### 2. Fluxograma de Decisão Operacional Gerado (Mermaid.js)
-```mermaid
-flowchart TD
-    A[Atraso de 14 dias em compressores - Rio Claro] --> B{Avaliação de Alternativas}
-    B -->|Opção 1: Frete Aéreo| C[Custo R$ 4.850.000,00 - Rejeitado]
-    B -->|Opção 2: Estoque Joinville| D[800 compressores compatíveis]
-    D --> E[Transferência Rodoviária Dedicada - R$ 68.000,00]
-    E --> F[Produção Frost Free Mantida sem Paradas]
-```
-
-### 3. Consulta Semântica RAG (BigQuery Vector Search)
-> **Pergunta:** *"O que a equipe de logística decidiu sobre os atrasos de compressores na fábrica de Rio Claro e qual o valor economizado?"*  
-> **Resposta:** *"Conforme alinhamento conduzido por Carlos Silva (Gerente de Logística) e Roberto Souza (Engenharia de Produção), foi decidida a transferência imediata de 800 compressores de segunda geração do armazém de Joinville para a fábrica de Rio Claro via frete rodoviário dedicado no valor de R\$ 68.000,00. Essa decisão evitou a contratação de frete aéreo emergencial cotado em R\$ 4.850.000,00, gerando uma economia de mais de R\$ 4,78 milhões e evitando a paralisação da linha de refrigeradores Frost Free Brastemp."*  
-> **Fontes Citadas:** *Dataset BigQuery `whirlpool_intelligence.meeting_knowledge_base` (Score de similaridade: 0.884).*
+### 3. Publicação no GitHub Pages & Cloud Run
+- **Frontend (GitHub Pages):** A pasta `frontend/` pode ser publicada diretamente no GitHub Pages como site estático. Para apontar para um backend em nuvem, basta alterar a constante `API_BASE` em `frontend/js/app.js`.
+- **Backend (Google Cloud Run):** O servidor FastAPI pode ser implantado no Cloud Run com um único comando serverless:
+  ```bash
+  gcloud run deploy whirlpool-ai-api --source . --region us-central1 --allow-unauthenticated
+  ```
 
 ---
 
