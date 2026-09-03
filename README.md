@@ -2,6 +2,10 @@
 ### Multi-Agent Intelligence, BigQuery Vector Search & Governance (Vertex AI)
 
 > Projeto desenvolvido sob medida para os requisitos da posição de **AI Analyst (Information Systems)** da **Whirlpool Corporation**, demonstrando na prática o desenvolvimento e implantação de soluções de IA Generativa, agentes autônomos/colaborativos, pipelines no BigQuery e governança corporativa de dados.
+> 
+> 🌐 **Acesse a Aplicação Online no Cloud Run:**  
+> 👉 [https://whirlpool-ai-portal-862130051262.us-central1.run.app](https://whirlpool-ai-portal-862130051262.us-central1.run.app)  
+> 📖 **Swagger API Docs:** [https://whirlpool-ai-portal-862130051262.us-central1.run.app/docs](https://whirlpool-ai-portal-862130051262.us-central1.run.app/docs)
 
 ---
 

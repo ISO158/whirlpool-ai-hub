@@ -229,5 +229,6 @@ app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn
-    print("[+] Inicializando Whirlpool AI Operations Hub Web Server...")
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    print(f"[+] Inicializando Whirlpool AI Operations Hub Web Server na porta {port}...")
+    uvicorn.run(app, host="0.0.0.0", port=port)

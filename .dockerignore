@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+.env
+.env.local
+data/raw_audio/*.mp3
+data/raw_audio/*.m4a
+data/raw_audio/*.wav
+data/raw_audio/*.mp4
+data/raw_audio/*.webm
+reports/*.md
+notebooks/.ipynb_checkpoints/
+*.log
