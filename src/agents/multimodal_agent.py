@@ -79,10 +79,12 @@ Retorne EXCLUSIVAMENTE o JSON válido, sem tags de código adicionais como ```js
         mime_map = {
             ".mp3": "audio/mp3",
             ".wav": "audio/wav",
-            ".m4a": "audio/m4a",
-            ".ogg": "audio/ogg"
+            ".m4a": "audio/mp4",
+            ".aac": "audio/aac",
+            ".ogg": "audio/ogg",
+            ".mp4": "video/mp4"
         }
-        mime_type = mime_map.get(ext, "audio/mp3")
+        mime_type = mime_map.get(ext, "audio/mp4")
 
         audio_part = types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)
 

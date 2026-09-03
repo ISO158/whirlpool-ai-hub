@@ -4,79 +4,71 @@
 **Departamento:** Logística e Manufatura | **Data:** 2026-08-15
 
 ## Resumo Executivo
-A reunião de emergência abordou o atraso de 14 dias na entrega de compressores inverter, o que poderia paralisar a linha de montagem de refrigeradores Brastemp Duplex em Rio Claro. Uma solução foi encontrada utilizando 800 compressores de segunda geração do armazém de Joinville, que serão transferidos via frete rodoviário expresso, evitando o alto custo do frete aéreo. As ações para a transferência e documentação foram definidas e aprovadas.
+A reunião de emergência abordou o atraso de 14 dias em um lote de compressores inverter para a planta de Rio Claro, com risco de paralisia na linha de montagem de refrigeradores Brastemp. Uma solução foi encontrada para utilizar compressores de segunda geração disponíveis em Joinville, evitando a interrupção da produção. Decisões incluíram a transferência imediata via frete rodoviário e a preparação de documentação técnica.
 
 ## Fluxograma Operacional do Processo (Mermaid)
 ```mermaid
 graph TD
-    A[Problema: Atraso de 14 dias na entrega de Compressores Inverter] --> B{Risco: Paralisação da Linha Brastemp Rio Claro?};
+    A[Gatilho: Atraso 14 dias - Compressores Inverter] --> B{Risco de Paralisia Linha Brastemp?};
 
-    B --> C[Avaliação de Soluções de Contingência];
+    B -- Sim --> C[Reunião de Emergência: Cadeia de Suprimentos];
+    C --> D[Análise de Soluções de Contingência];
 
-    C --> D{Opção 1: Frete Aéreo Emergencial (Alto Custo)};
-    D -- Rejeitado --> D_rej[Frete Aéreo Cancelado];
+    D --> E{"Decisão Estratégica: Utilizar Compressores G2 de Joinville"};
 
-    C --> E{Opção 2: Utilizar Compressores 2ª Geração de Joinville?};
-    E -- Aprovado --> F[Decisão: Transferir 800 Compressores de Joinville para Rio Claro];
+    E --> F[Decisão Operacional: Transferir 800 Compressores G2 Joinville para Rio Claro];
+    E --> G[Decisão Logística: Utilizar Frete Rodoviário Dedicado];
+    E --> H[Decisão Qualidade: Laudo Técnico de Engenharia];
 
-    F --> G{Definir Tipo de Frete para Transferência};
-    G -- Rodoviário Expresso (R$ 68.000,00) --> H[Frete Rodoviário Dedicado Aprovado];
+    F --> FA[Ação: Acionar Transferência Imediata];
+    FA -- Responsável: Mariana Mendes --> FB[Prazo: Amanhã 18h];
 
-    H --> I[Início do Plano de Ação];
+    G --> GA[Ação: Aprovar Frete Rodoviário Dedicado];
+    GA -- Responsável: Carlos Silva --> GB[Condição: Valor Contingenciado];
 
-    I --> J(Ação: Acionar Transferência de 800 Compressores de Joinville p/ Rio Claro);
-    J -- Responsável: Mariana Mendes --> J_prazo[Prazo: Amanhã às 18h];
+    H --> HA[Ação: Preparar Laudo Técnico para CQ];
+    HA -- Responsável: Roberto Souza --> HB[Status: Pendente];
 
-    I --> K(Ação: Preparar Laudo Técnico da Engenharia p/ Controle de Qualidade);
-    K -- Responsável: Roberto Souza --> K_status[Status: Pendente];
-
-    I --> L(Ação: Aprovar Frete Rodoviário Dedicado - R$ 68.000,00);
-    L -- Responsável: Carlos Silva --> L_status[Status: Pendente];
-
-    I --> M(Ação: Registrar Plano de Ação no Jira - LOG-2026-784);
-    M -- Responsável: Mariana Mendes --> M_status[Status: Pendente];
-
-    J_prazo --> N[Solução de Contingência em Execução];
-    K_status --> N;
-    L_status --> N;
-    M_status --> N;
-
-    N --> O[Monitoramento e Conclusão do Plano];
+    subgraph Gerenciamento do Plano de Ação
+        E --- JA[Ação: Registrar Plano de Ação no Jira];
+        JA -- Responsável: Mariana Mendes --> JB[Ticket: LOG-2026-784];
+    end
 ```
 
 ## Matriz de Governança de Tarefas (RACI)
-Como Gerente de Projetos Sênior da Whirlpool, compreendo a importância de clareza e responsabilidade. Abaixo está a Matriz RACI para as ações listadas, alinhada às funções corporativas tradicionais da Whirlpool.
+Como Gerente de Projetos Sênior da Whirlpool, é crucial ter clareza nas responsabilidades para garantir a execução eficiente e pontual das ações.
 
----
+Abaixo, apresento a Matriz RACI para as ações discutidas, alinhada com as funções corporativas e a dinâmica da Whirlpool:
 
-### Matriz RACI: Alinhamento Operacional - Cadeia de Suprimentos e Compressores
+# Matriz RACI: Alinhamento Operacional - Cadeia de Suprimentos e Compressores
 
-| Ação / Entregável                                                                  | Responsável (R)    | Aprovador (A)              | Consultado (C)       | Informado (I)                | Prazo           |
-| :--------------------------------------------------------------------------------- | :----------------- | :------------------------- | :------------------- | :--------------------------- | :-------------- |
-| Acionar a transferência imediata de 800 compressores de Joinville para Rio Claro | Mariana Mendes     | Carlos Silva               | Roberto Souza        | N/A                          | amanhã às 18h   |
-| Preparar o laudo técnico da engenharia para o controle de qualidade                | Roberto Souza      | Gerência de Engenharia     | Mariana Mendes       | Carlos Silva                 | Sem Prazo       |
-| Aprovar o frete rodoviário dedicado no valor contingenciado de R$ 68.000,00, cancelando a opção aérea | Carlos Silva       | Carlos Silva               | Mariana Mendes       | Roberto Souza                | Sem Prazo       |
-| Registrar o plano de ação no Jira corporativo sob o ticket LOG-2026-784            | Mariana Mendes     | Gerente de Projetos        | N/A                  | Carlos Silva, Roberto Souza  | Sem Prazo       |
-
----
+| Ação / Entregável | Responsável (R) | Aprovador (A) | Consultado (C) | Informado (I) | Prazo |
+|---|---|---|---|---|---|
+| Acionar a transferência imediata de 800 compressores de Joinville para Rio Claro | Mariana Mendes | Carlos Silva | Roberto Souza | - | amanhã às 18h |
+| Preparar o laudo técnico da engenharia para o controle de qualidade | Roberto Souza | Roberto Souza | Mariana Mendes | Carlos Silva | - |
+| Aprovar o frete rodoviário dedicado no valor contingenciado | Carlos Silva | Carlos Silva | Mariana Mendes | Roberto Souza | - |
+| Registrar o plano de ação no Jira corporativo sob o ticket LOG-2026-784 | Mariana Mendes | Carlos Silva | - | Roberto Souza | - |
 
 **Justificativas para as atribuições:**
 
 *   **Acionar transferência de compressores:**
-    *   **R (Responsável):** Mariana Mendes (Supervisora de Suprimentos) é a responsável direta por coordenar e executar a logística de suprimentos.
-    *   **A (Aprovador):** Carlos Silva (Gerente de Logística) é o aprovador final para operações de transporte e movimentação de grande volume.
-    *   **C (Consultado):** Roberto Souza (Engenharia de Produção) deve ser consultado sobre a necessidade exata, especificações técnicas ou impactos na linha de produção em Rio Claro.
+    *   **R: Mariana Mendes (Suprimentos):** É a responsável por coordenar a movimentação de materiais e fornecedores, ativando a logística.
+    *   **A: Carlos Silva (Logística):** Gerente de Logística, ele é o responsável final pela aprovação e sucesso de uma transferência crítica de grande volume.
+    *   **C: Roberto Souza (Engenharia):** Pode ser consultado sobre as especificações técnicas dos compressores ou condições de transporte/recebimento para garantir a integridade do produto.
 *   **Preparar laudo técnico:**
-    *   **R (Responsável):** Roberto Souza (Engenharia de Produção) é o técnico habilitado para elaborar este tipo de documento.
-    *   **A (Aprovador):** A Gerência de Engenharia (ou seu superior direto) é a responsável por aprovar e validar tecnicamente o laudo.
-    *   **C (Consultado):** Mariana Mendes (Supervisora de Suprimentos) pode ser consultada caso o laudo envolva questões de qualidade de fornecedores ou impactos na compra futura.
-    *   **I (Informado):** Carlos Silva (Gerente de Logística) precisa ser informado sobre o laudo, especialmente se houver implicações para o estoque ou movimentação de materiais.
+    *   **R: Roberto Souza (Engenharia):** Como engenheiro, ele é o especialista e o executor direto da preparação do laudo.
+    *   **A: Roberto Souza (Engenharia):** Em casos de laudos técnicos específicos de sua área, o próprio responsável pela elaboração é também o aprovador de seu conteúdo técnico.
+    *   **C: Mariana Mendes (Suprimentos):** A cadeia de suprimentos precisa entender as implicações do laudo para futuras aquisições ou tratamento de materiais.
+    *   **I: Carlos Silva (Logística):** Para ciência de qualquer impacto na movimentação ou armazenamento de itens relacionados.
 *   **Aprovar frete rodoviário dedicado:**
-    *   **R (Responsável):** Carlos Silva (Gerente de Logística) é o responsável por negociar e contratar o frete.
-    *   **A (Aprovador):** Carlos Silva, como Gerente, possui autonomia e orçamento para aprovar este tipo de despesa contingenciada, especialmente para garantir a continuidade da operação.
-    *   **C (Consultado):** Mariana Mendes (Supervisora de Suprimentos) deve ser consultada sobre a decisão do tipo de frete, pois ela é a originadora da necessidade de suprimento e a mudança afeta os planos de entrega.
-    *   **I (Informado):** Roberto Souza (Engenharia de Produção) precisa ser informado sobre o método de transporte e os prazos estimados, pois isso afeta seu planejamento de produção.
+    *   **R: Carlos Silva (Logística):** Como Gerente de Logística, a aprovação de fretes e custos logísticos está sob sua alçada direta.
+    *   **A: Carlos Silva (Logística):** Ele é o responsável por esta decisão e suas implicações orçamentárias dentro da área.
+    *   **C: Mariana Mendes (Suprimentos):** Ela é a "cliente" interna que demanda o frete (para a transferência dos compressores) e deve ser consultada sobre a adequação e urgência do serviço.
+    *   **I: Roberto Souza (Engenharia):** Para que esteja ciente de que a solução de transporte para os compressores está sendo encaminhada.
 *   **Registrar plano de ação no Jira:**
-    *   **R (Responsável):** Mariana Mendes (Supervisora de Suprimentos) é a responsável pela execução da tarefa administrativa de registro.
-    *   **A (Aprovador):** O Gerente de Projetos (neste caso, o seu papel como o solicitante do plano de ação) é quem garante que o plano seja devidamente registrado e que os próximos passos estejam visíveis e rastreáveis.
-    *   **I (Informado):** Carlos Silva e Roberto Souza, como stakeholders do projeto, precisam ser informados sobre onde o plano de ação está documentado para acompanhamento.
+    *   **R: Mariana Mendes (Suprimentos):** É a executora da tarefa administrativa de registro.
+    *   **A: Carlos Silva (Logística):** O ticket é `LOG-`, indicando que o plano de ação é de Logística, tornando o Gerente de Logística o responsável final pela conformidade e execução do plano.
+    *   **C: -** Para a *ação de registrar*, não há necessidade de consulta de especialistas do grupo listado. O *conteúdo* do plano de ação, sim, pode ter envolvido consultas prévias.
+    *   **I: Roberto Souza (Engenharia):** Todos os envolvidos nas ações devem ser informados que o plano foi formalmente registrado e é acompanhado.
+
+Esta matriz servirá como uma ferramenta clara para a gestão e acompanhamento das tarefas, garantindo que cada um saiba seu papel e responsabilidade no processo.

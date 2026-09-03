@@ -1,5 +1,5 @@
 import os
-import sys
+import glob
 from typing import List, Dict, Any
 
 from data.sample_meetings import SAMPLE_MEETINGS
@@ -11,17 +11,147 @@ from src.agents.diagram_agent import ProcessDiagramAgent
 from src.agents.rag_agent import RagConsultantAgent
 from src.utils.gcp_client import PROJECT_ID, DATASET_ID, TABLE_ID
 
+def process_audio_directory(audio_dir: str = "data/raw_audio") -> List[Dict[str, Any]]:
+    """
+    Escaneia a pasta data/raw_audio e processa automaticamente qualquer
+    arquivo de áudio (.m4a, .mp3, .wav, .aac, .mp4) com o Gemini Multimodal.
+    """
+    supported_extensions = ("*.m4a", "*.mp3", "*.wav", "*.aac", "*.ogg", "*.mp4")
+    audio_files = []
+    for ext in supported_extensions:
+        audio_files.extend(glob.glob(os.path.join(audio_dir, ext)))
+
+    if not audio_files:
+        print(f"[INFO] Nenhum arquivo de áudio encontrado em {audio_dir}.")
+        return []
+
+    print(f"\n[+] Encontrados {len(audio_files)} arquivo(s) de áudio em {audio_dir} para processamento multimodal:")
+    for f in audio_files:
+        print(f"    • {os.path.basename(f)} ({os.path.getsize(f) / 1024:.1f} KB)")
+
+    multi_agent = MultimodalMeetingAgent()
+    gov_agent = GovernanceAgent()
+    diagram_agent = ProcessDiagramAgent()
+
+    processed_audios = []
+    all_audio_rows = []
+
+    for idx, audio_path in enumerate(audio_files, 1):
+        filename = os.path.basename(audio_path)
+        meeting_id = f"WP-AUDIO-{idx:03d}"
+        print(f"\n" + "-" * 60)
+        print(f"[ÁUDIO MULTIMODAL {idx}/{len(audio_files)}] Processando: {filename}")
+        print("-" * 60)
+
+        # 1. Envio para o Vertex AI Gemini 2.5 Flash
+        audio_analysis = multi_agent.process_audio_file(
+            audio_path=audio_path,
+            meeting_id=meeting_id,
+            department="Inovação e Automação de Processos"
+        )
+
+        title = audio_analysis.get("meeting_title", f"Reunião de Áudio: {filename}")
+        raw_transcript = audio_analysis.get("raw_transcription") or audio_analysis.get("summary", "")
+        print(f"Título Identificado: {title}")
+        print(f"Participantes: {audio_analysis.get('participants')}")
+        print(f"\nTranscrição:\n{raw_transcript}\n")
+
+        # 2. Governança PULSE/PIA
+        gov_result = gov_agent.sanitize_transcript(raw_transcript)
+        sanitized_text = gov_result["sanitized_text"]
+        print(f"Auditoria PULSE/PIA aplicada: {gov_result['metrics']}")
+
+        # 3. Chunks e Embeddings
+        chunks = audio_analysis.get("chunks", [])
+        if not chunks:
+            chunks = [{
+                "chunk_id": f"{meeting_id}-CHK-01",
+                "speaker": audio_analysis.get("participants", ["Interlocutor"])[0] if audio_analysis.get("participants") else "Interlocutor",
+                "topic": "Demanda de Automação de Tarefas",
+                "content": sanitized_text,
+                "action_items": audio_analysis.get("action_items", [])
+            }]
+
+        for i, chk in enumerate(chunks, 1):
+            if isinstance(chk, dict):
+                content = chk.get("content") or chk.get("text") or sanitized_text
+                speaker = chk.get("speaker", "Interlocutor")
+                topic = chk.get("topic", "Automação e Processos")
+                raw_actions = chk.get("action_items") or audio_analysis.get("action_items", [])
+                chunk_id = chk.get("chunk_id", f"{meeting_id}-CHK-{i:02d}")
+            else:
+                content = str(chk)
+                speaker = "Interlocutor"
+                topic = "Automação e Processos"
+                raw_actions = audio_analysis.get("action_items", [])
+                chunk_id = f"{meeting_id}-CHK-{i:02d}"
+
+            emb = generate_text_embedding(f"{speaker}: {content}")
+
+            clean_actions = []
+            if isinstance(raw_actions, list):
+                for a in raw_actions:
+                    if isinstance(a, dict):
+                        clean_actions.append(f"{a.get('action', '')} (Resp: {a.get('owner', 'N/A')})")
+                    elif isinstance(a, str):
+                        clean_actions.append(str(a))
+
+            all_audio_rows.append({
+                "chunk_id": chunk_id,
+                "meeting_id": meeting_id,
+                "meeting_title": title,
+                "meeting_date": "2026-09-03",
+                "department": "Inovação e Automação de Processos",
+                "speaker": speaker,
+                "content_sanitized": content,
+                "action_items": clean_actions,
+                "embedding": emb
+            })
+
+        # 4. Geração de Diagrama Mermaid e Matriz RACI para o áudio
+        print(f"[+] Gerando fluxograma de decisão Mermaid e Matriz RACI para {filename}...")
+        mermaid_chart = diagram_agent.generate_operational_diagram(audio_analysis)
+        raci_table = diagram_agent.generate_raci_matrix(audio_analysis)
+
+        os.makedirs("reports", exist_ok=True)
+        base_name = os.path.splitext(filename)[0]
+        report_path = os.path.join("reports", f"relatorio_{base_name}.md")
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write(f"# Relatório Operacional - Áudio: {filename}\n\n")
+            f.write(f"**Título:** {title}\n")
+            f.write(f"**Departamento:** Inovação e Automação de Processos | **Data:** 2026-09-03\n\n")
+            f.write(f"## Transcrição Sanitizada (PULSE/LGPD)\n{sanitized_text}\n\n")
+            f.write(f"## Resumo Executivo\n{audio_analysis.get('summary')}\n\n")
+            f.write(f"## Fluxograma de Processo (Mermaid)\n{mermaid_chart}\n\n")
+            f.write(f"## Matriz RACI de Responsabilidades\n{raci_table}\n")
+
+        print(f"[OK] Relatório gerado em: {report_path}")
+        processed_audios.append(audio_analysis)
+
+    # Inserção em batch no BigQuery
+    if all_audio_rows:
+        print(f"\n[+] Inserindo {len(all_audio_rows)} trechos de áudio no BigQuery...")
+        insert_meeting_chunks(all_audio_rows)
+
+    return processed_audios
+
 def run_ingestion_pipeline() -> List[Dict[str, Any]]:
     """
-    Executa o pipeline completo de ingestão, sanitização e indexação vetorial no BigQuery.
+    Executa o pipeline completo:
+    1. Ingestão de áudios reais da pasta data/raw_audio/
+    2. Ingestão das reuniões simuladas corporativas
     """
     print("\n" + "=" * 70)
-    print("ETAPA 1: INGESTÃO, GOVERNANÇA (PULSE/PIA) E INDEXAÇÃO NO BIGQUERY")
+    print("ETAPA 1: INGESTÃO MULTIMODAL, GOVERNANÇA (PULSE) E BIGQUERY VECTOR SEARCH")
     print("=" * 70)
 
-    # 1. Garante dataset e tabela no BigQuery
+    # Garante dataset e tabela no BigQuery
     init_bigquery_schema()
 
+    # 1. Processa todos os áudios reais presentes em data/raw_audio
+    audios = process_audio_directory("data/raw_audio")
+
+    # 2. Processa as atas textuais
     multi_agent = MultimodalMeetingAgent()
     gov_agent = GovernanceAgent()
 
@@ -31,12 +161,9 @@ def run_ingestion_pipeline() -> List[Dict[str, Any]]:
     for item in SAMPLE_MEETINGS:
         print(f"\n[+] Processando Reunião: '{item['meeting_title']}'")
         
-        # Governança: Sanitiza PII antes de qualquer processamento estruturado
         gov_result = gov_agent.sanitize_transcript(item["raw_text"])
         sanitized_text = gov_result["sanitized_text"]
-        print(f"    - Governança PULSE aplicada: {gov_result['metrics']}")
 
-        # Agente Multimodal: Estruturação dos diálogos
         structured = multi_agent.process_transcript_text(
             meeting_id=item["meeting_id"],
             title=item["meeting_title"],
@@ -46,13 +173,10 @@ def run_ingestion_pipeline() -> List[Dict[str, Any]]:
         )
         processed_meetings.append(structured)
 
-        # Geração de Embeddings para cada chunk
-        print(f"    - Gerando embeddings vetoriais (text-embedding-004) para {len(structured.get('chunks', []))} trechos...")
         for chk in structured.get("chunks", []):
             content_to_embed = f"{chk.get('speaker', '')}: {chk.get('content', '')}"
             emb_vector = generate_text_embedding(content_to_embed)
 
-            # Garante que action_items seja estritamente uma lista de strings (ARRAY<STRING>)
             raw_actions = chk.get("action_items", [])
             clean_actions = []
             if isinstance(raw_actions, list):
@@ -78,74 +202,32 @@ def run_ingestion_pipeline() -> List[Dict[str, Any]]:
                 "embedding": emb_vector
             })
 
-    # Inserção em batch no BigQuery
-    print(f"\n[+] Inserindo {len(all_bq_rows)} chunks com vetores na tabela {PROJECT_ID}.{DATASET_ID}.{TABLE_ID}...")
+    print(f"\n[+] Inserindo {len(all_bq_rows)} chunks no BigQuery...")
     insert_meeting_chunks(all_bq_rows)
 
-    # Criação do VECTOR INDEX após os dados estarem populados
-    print("[+] Criando / Atualizando o VECTOR INDEX nativo no BigQuery...")
-    bq = get_bigquery_client()
-    index_sql = f"""
-    CREATE VECTOR INDEX IF NOT EXISTS meeting_vector_idx
-    ON `{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}`(embedding)
-    OPTIONS(distance_type='COSINE', index_type='IVF');
-    """
-    try:
-        job = bq.query(index_sql)
-        job.result()
-        print("[OK] VECTOR INDEX operacional no BigQuery!")
-    except Exception as e:
-        print(f"[INFO] Status do índice vetorial: {e}")
-
-    return processed_meetings
-
-def generate_business_deliverables(meetings: List[Dict[str, Any]]):
-    """
-    Executa o Agente de Diagramas e Matriz RACI para o caso de estudo de Supply Chain.
-    """
-    print("\n" + "=" * 70)
-    print("ETAPA 2: GERAÇÃO DE ENTREGÁVEIS DE PROCESSO (MERMAID & MATRIZ RACI)")
-    print("=" * 70)
-
-    diagram_agent = ProcessDiagramAgent()
-    target_meeting = meetings[0] # Reunião de compressores da Brastemp
-
-    print(f"Gerando artefatos operacionais para: '{target_meeting['meeting_title']}'...")
-    diagram = diagram_agent.generate_operational_diagram(target_meeting)
-    raci = diagram_agent.generate_raci_matrix(target_meeting)
-
-    os.makedirs("reports", exist_ok=True)
-    report_path = os.path.join("reports", "relatorio_operacional_compressores.md")
-    with open(report_path, "w", encoding="utf-8") as f:
-        f.write(f"# Relatório de Inteligência Operacional - Whirlpool\n\n")
-        f.write(f"**Reunião:** {target_meeting['meeting_title']}\n")
-        f.write(f"**Departamento:** {target_meeting['department']} | **Data:** {target_meeting['meeting_date']}\n\n")
-        f.write(f"## Resumo Executivo\n{target_meeting.get('summary')}\n\n")
-        f.write(f"## Fluxograma Operacional do Processo (Mermaid)\n{diagram}\n\n")
-        f.write(f"## Matriz de Governança de Tarefas (RACI)\n{raci}\n")
-
-    print(f"[OK] Relatório executivo com fluxograma Mermaid e Matriz RACI salvo em: {report_path}")
+    return processed_meetings + audios
 
 def run_rag_demonstration():
     """
-    Executa consultas analíticas demonstrando o poder do BigQuery Vector Search.
+    Executa consultas analíticas demonstrando o poder do BigQuery Vector Search,
+    incluindo perguntas sobre os áudios gravados e reuniões corporativas.
     """
     print("\n" + "=" * 70)
-    print("ETAPA 3: CONSULTAS DE ALTO VALOR COM BIGQUERY VECTOR SEARCH (RAG)")
+    print("ETAPA 2: CONSULTAS ANALÍTICAS COM BIGQUERY VECTOR SEARCH (RAG)")
     print("=" * 70)
 
     rag = RagConsultantAgent()
     demo_questions = [
-        "O que a equipe de logística decidiu sobre os atrasos de compressores na fábrica de Rio Claro e qual o valor economizado?",
-        "Qual problema de qualidade foi identificado na linha de Lava e Seca e qual a ação corretiva com o lote de amortecedores?",
-        "Qual o orçamento de Capex e ROI aprovados pela diretoria financeira para os projetos de IA no Google Cloud?"
+        "Quais setores da empresa foram contatados sobre demandas de automação de tarefas e quais necessidades foram mapeadas?",
+        "O que a equipe de logística decidiu sobre os atrasos de compressores na fábrica de Rio Claro e qual o frete aprovado?",
+        "Qual o orçamento anual de computação em nuvem e ROI projetado para os projetos de IA no Google Cloud?"
     ]
 
     for q in demo_questions:
         print("\n" + "-" * 60)
         print(f"PERGUNTA: {q}")
         print("-" * 60)
-        result = rag.answer_query(q, top_k=2)
+        result = rag.answer_query(q, top_k=3)
         print(f"\nRESPOSTA RAG:\n{result['answer']}\n")
         print("FONTES RECUPERADAS DO BIGQUERY:")
         for s in result["sources"]:
@@ -156,18 +238,15 @@ def main():
     print("   WHIRLPOOL AI OPERATIONS HUB: MULTI-AGENT & BIGQUERY VECTOR SEARCH   ")
     print("=" * 70)
     
-    # 1. Pipeline de Dados & Governança
-    meetings = run_ingestion_pipeline()
+    # 1. Executa Ingestão (Áudios em data/raw_audio + Atas)
+    run_ingestion_pipeline()
 
-    # 2. Geração de Diagramas e RACI
-    generate_business_deliverables(meetings)
-
-    # 3. Demonstração do RAG com BigQuery Vector Search
+    # 2. Executa Demonstração RAG
     run_rag_demonstration()
 
     print("\n" + "=" * 70)
     print("PROCESSO COMPLETO FINALIZADO COM SUCESSO!")
-    print("Todos os dados estão indexados e operacionais no BigQuery e Vertex AI.")
+    print("Todos os áudios e reuniões estão indexados e operacionais no BigQuery.")
     print("=" * 70)
 
 if __name__ == "__main__":
